@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use barnacle_ray::{
     ray::Ray,
     vec3::{Color, Point3, Vec3},
@@ -64,6 +66,8 @@ fn main() {
     */
     let pixel00_loc = vierpower_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
+    let start = Instant::now();
+
     println!("P3\n{} {}\n255", image_width, image_height);
 
     for j in 0..image_height {
@@ -87,21 +91,25 @@ fn main() {
         }
     }
 
+    let duration = start.elapsed();
+
     eprintln!("\rListo              \n");
+    eprintln!("Tiempo de renderizado: {:.2?}", duration);
 }
 
 pub fn hit_sphere(center: Point3, radius: f64, r: &Ray) -> f64 {
     let oc: Vec3 = center - r.origin();
-    let a = r.direction().dot(r.direction());
-    let b = -2.0 * r.direction().dot(oc);
-    let c = oc.dot(oc) - radius * radius;
+    let a = r.direction().length_squared();
+    let h = r.direction().dot(oc);
+    let c = oc.length_squared() - radius * radius;
 
-    let discriminant = b * b - 4.0 * a * c;
+    let discriminant = h * h - a * c;
 
     if discriminant < 0.0 {
         -1.0
     } else {
-        (-b - discriminant.sqrt()) / (2.0 * a)
+        // Resolvemos para obtener el primer punto donde choca con la esfera (raiz 1)
+        (h - discriminant.sqrt()) / a
     }
 }
 
@@ -109,8 +117,10 @@ pub fn ray_color(r: Ray) -> Color {
     let t = hit_sphere(Point3::new(0.0, 0.0, -1.0), 0.5, &r);
 
     if t > 0.0 {
+        // Calculamos la normal en donde el rayo toca la esfera
         let n: Vec3 = (r.at(t) - Vec3::new(0.0, 0.0, -1.0)).unit_vector();
 
+        // Normalizamos el color y lo devolvemos
         return 0.5 * Color::new(n.x() + 1.0, n.y() + 1.0, n.z() + 1.0);
     }
 
