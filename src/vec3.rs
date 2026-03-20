@@ -18,9 +18,11 @@ impl Vec3 {
     pub fn x(&self) -> f64 {
         self.e[0]
     }
+
     pub fn y(&self) -> f64 {
         self.e[1]
     }
+
     pub fn z(&self) -> f64 {
         self.e[2]
     }
@@ -75,6 +77,7 @@ impl IndexMut<usize> for Vec3 {
     }
 }
 
+// Suma de vectores: v1 + v2
 impl Add<Vec3> for Vec3 {
     type Output = Vec3;
 
@@ -83,6 +86,7 @@ impl Add<Vec3> for Vec3 {
     }
 }
 
+// Resta de vectores: v1 - v2
 impl Sub<Vec3> for Vec3 {
     type Output = Vec3;
 
@@ -91,6 +95,7 @@ impl Sub<Vec3> for Vec3 {
     }
 }
 
+// Multiplicación por escalar: v * s
 impl Mul<f64> for Vec3 {
     type Output = Vec3;
 
@@ -99,6 +104,7 @@ impl Mul<f64> for Vec3 {
     }
 }
 
+// Multiplicación componente a componente: v1 * v2
 impl Mul<Vec3> for Vec3 {
     type Output = Vec3;
 
@@ -107,6 +113,7 @@ impl Mul<Vec3> for Vec3 {
     }
 }
 
+// Multiplicación por escalar (conmutativa): s * v
 impl Mul<Vec3> for f64 {
     type Output = Vec3;
 
@@ -115,6 +122,7 @@ impl Mul<Vec3> for f64 {
     }
 }
 
+// División por escalar: v / s
 impl Div<f64> for Vec3 {
     type Output = Vec3;
 
@@ -123,6 +131,7 @@ impl Div<f64> for Vec3 {
     }
 }
 
+// Negación: -v
 impl Neg for Vec3 {
     type Output = Vec3;
 
@@ -131,6 +140,7 @@ impl Neg for Vec3 {
     }
 }
 
+// Suma y asignación: v1 += v2
 impl AddAssign<Vec3> for Vec3 {
     fn add_assign(&mut self, other: Vec3) {
         self[0] = self[0] + other[0];
@@ -139,6 +149,7 @@ impl AddAssign<Vec3> for Vec3 {
     }
 }
 
+// Resta y asignación: v1 -= v2
 impl SubAssign<Vec3> for Vec3 {
     fn sub_assign(&mut self, other: Vec3) {
         self[0] = self[0] - other[0];
@@ -147,6 +158,7 @@ impl SubAssign<Vec3> for Vec3 {
     }
 }
 
+// Multiplicación por escalar y asignación: v *= s
 impl MulAssign<f64> for Vec3 {
     fn mul_assign(&mut self, scalar: f64) {
         self[0] = self[0] * scalar;
@@ -155,6 +167,7 @@ impl MulAssign<f64> for Vec3 {
     }
 }
 
+// Multiplicación componente a componente y asignación: v1 *= v2
 impl MulAssign<Vec3> for Vec3 {
     fn mul_assign(&mut self, other: Vec3) {
         self[0] = self[0] * other[0];
@@ -163,6 +176,7 @@ impl MulAssign<Vec3> for Vec3 {
     }
 }
 
+// División por escalar y asignación: v /= s
 impl DivAssign<f64> for Vec3 {
     fn div_assign(&mut self, scalar: f64) {
         self[0] = self[0] / scalar;
@@ -174,6 +188,7 @@ impl DivAssign<f64> for Vec3 {
 pub type Point3 = Vec3;
 pub type Color = Vec3;
 
+// Formateo para impresión (PPM)
 impl fmt::Display for Vec3 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let r = (255.999 * self[0]) as u8;
