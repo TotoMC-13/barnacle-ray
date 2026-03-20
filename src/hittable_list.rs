@@ -25,8 +25,7 @@ impl HittableList {
         self.objects.clear();
     }
 
-    // Recibimos un Box (el equivalente al smart pointer en este caso)
-    // y lo metemos en el vector.
+    // Recibimos un Box y lo metemos en el vector.
     pub fn add(&mut self, object: Box<dyn Hittable>) {
         self.objects.push(object);
     }
