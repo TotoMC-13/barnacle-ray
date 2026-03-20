@@ -1,9 +1,10 @@
-use std::time::Instant;
+use std::{f64::INFINITY, time::Instant};
 
 use barnacle_ray::{
-    ray::Ray,
-    vec3::{Color, Point3, Vec3},
+    hittable::{HitRecord, Hittable}, hittable_list::HittableList, interval::Interval, ray::Ray, sphere::Sphere, vec3::{Color, Point3, Vec3}
 };
+
+const PI: f64 = 3.1415926535897932385;
 
 fn main() {
     // Configuracion de la imagen
@@ -14,6 +15,14 @@ fn main() {
     if image_height < 1 {
         image_height = 1;
     }
+
+    // World
+    let mut world: HittableList = HittableList::new();
+
+    world.add(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5))); // Esfera en el centro
+    world.add(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0))); // El "piso"
+
+    // Camara
 
     let focal_length = 1.0;
 
@@ -85,7 +94,7 @@ fn main() {
             let r: Ray = Ray::new(camera_center, ray_direction);
 
             // Usamos ray_color con el rayo "r" para obtener su color
-            let pixel_color: Color = ray_color(r);
+            let pixel_color: Color = ray_color(&r, &world);
 
             println!("{}", pixel_color)
         }
@@ -113,19 +122,25 @@ pub fn hit_sphere(center: Point3, radius: f64, r: &Ray) -> f64 {
     }
 }
 
-pub fn ray_color(r: Ray) -> Color {
-    let t = hit_sphere(Point3::new(0.0, 0.0, -1.0), 0.5, &r);
+fn degrees_to_radians(degrees: f64) -> f64 {
+    degrees * PI / 180.0
+}
 
-    if t > 0.0 {
-        // Calculamos la normal en donde el rayo toca la esfera
-        let n: Vec3 = (r.at(t) - Vec3::new(0.0, 0.0, -1.0)).unit_vector();
+pub fn ray_color(r: &Ray, world: &dyn Hittable) -> Color {
+    let mut rec = HitRecord::default(); // El formulario en blanco
 
-        // Normalizamos el color y lo devolvemos
-        return 0.5 * Color::new(n.x() + 1.0, n.y() + 1.0, n.z() + 1.0);
+    // Le tiramos el rayo al mundo. t_min es 0.001 para evitar bugs de precisión, t_max es infinito.
+    if world.hit(r, Interval::new(0.0, INFINITY), &mut rec) {
+        // Si choco con algo, calculamos el color en base a la normal de ESE objeto ganador
+        return 0.5
+            * Color::new(
+                rec.normal.x() + 1.0,
+                rec.normal.y() + 1.0,
+                rec.normal.z() + 1.0,
+            );
     }
 
-    // Convertimos r en un vector unitario, ahora  tiene una longitud de 1 unidad.
-    let unit_direction: Vec3 = r.direction().unit_vector();
+    let unit_direction = r.direction().unit_vector();
 
     /*
         Ahora como y esta entre -1 y 1, vamos a pasarlo al rango de
