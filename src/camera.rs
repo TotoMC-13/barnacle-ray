@@ -108,7 +108,7 @@ impl Camera {
             o no y despues procede a modificar el valor a donde apunta el puntero de rec, asi recuperando la info (record)
             de la colision y pudiendo obtener la normal con rec.normal en el return
         */
-        if world.hit(r, Interval::new(0.0, INFINITY), &mut rec) {
+        if world.hit(r, Interval::new(0.001, INFINITY), &mut rec) {
             // Si choco con algo, calculamos el color en base a la normal de ese objeto ganador
             return 0.5 * (rec.normal + Color::new(1.0, 1.0, 1.0));
         }

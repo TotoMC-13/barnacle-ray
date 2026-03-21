@@ -4,7 +4,7 @@ use std::ops::{
 };
 
 use crate::interval::Interval;
-use crate::utils::{random_double, random_double_range};
+use crate::utils::{linear_to_gamma, random_double, random_double_range};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Vec3 {
@@ -219,9 +219,13 @@ pub type Color = Vec3;
 // Formateo para impresión (PPM)
 impl fmt::Display for Vec3 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let r = self.x();
-        let g = self.y();
-        let b = self.z();
+        let mut r = self.x();
+        let mut g = self.y();
+        let mut b = self.z();
+
+        r = linear_to_gamma(r);
+        g = linear_to_gamma(g);
+        b = linear_to_gamma(b);
 
         let interval: Interval = Interval::new(0.000, 0.999);
 
