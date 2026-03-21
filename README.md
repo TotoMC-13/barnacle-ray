@@ -1,6 +1,6 @@
 # Implementing a ray-tracing engine with Rust from scratch with the help of [Ray Tracing in One Weekend](https://raytracing.github.io/books/RayTracingInOneWeekend.html)
 
-# How to use:
+## How to use:
 - Open your command terminal and run `git clone https://github.com/TotoMC-13/barnacle-ray.git`
 - `cd barnacle-ray` **important notice:** The run file only works for Windows as it's a `.bat` file, it's not hard to create one for Linux or whatever you use but at this point of the project I'm too lazy to do it, feel free to make a PR if you make one and I'll gladly merge it.
 - `compile.bat` and wait for it to finish rendering
