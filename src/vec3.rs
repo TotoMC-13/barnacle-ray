@@ -4,6 +4,7 @@ use std::ops::{
 };
 
 use crate::interval::Interval;
+use crate::utils::{random_double, random_double_range};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Vec3 {
@@ -53,6 +54,31 @@ impl Vec3 {
         let norm = self.length();
 
         Vec3::new(self[0] / norm, self[1] / norm, self[2] / norm)
+    }
+
+    pub fn random() -> Vec3 {
+        Vec3::new(random_double(), random_double(), random_double())
+    }
+
+    pub fn random_range(min: f64, max: f64) -> Vec3 {
+        Vec3::new(
+            random_double_range(min, max),
+            random_double_range(min, max),
+            random_double_range(min, max),
+        )
+    }
+
+    pub fn random_in_unit_sphere() -> Vec3 {
+        loop {
+            // Generamos un vector en el cubo [-1, 1]
+            let p = Vec3::random_range(-1.0, 1.0);
+
+            // Si el cuadrado de su longitud es < 1, está dentro de la esfera
+            if p.length_squared() < 1.0 {
+                return p;
+            }
+            // Si no, el loop sigue y "rechaza" el anterior
+        }
     }
 }
 

@@ -92,7 +92,7 @@ impl Camera {
         self.pixel00_loc = vierpower_upper_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
     }
 
-    fn ray_color(&self, r: &Ray, world: &dyn Hittable) -> Color {
+    fn _old_ray_color(&self, r: &Ray, world: &dyn Hittable) -> Color {
         let mut rec: HitRecord = HitRecord::default();
 
         /*
@@ -129,6 +129,41 @@ impl Camera {
         (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
     }
 
+    pub fn ray_color(&self, r: &Ray, world: &dyn Hittable, depth: i32) -> Color {
+        if depth <= 0 {
+            return Color::default();
+        }
+
+        let mut rec = HitRecord::default();
+        // Usamos 0.001 para ignorar choques muy cercanos
+        if world.hit(r, Interval::new(0.001, INFINITY), &mut rec) {
+            // 1. Generamos la direccion aleatoria
+            let direction = rec.normal + Vec3::random_in_unit_sphere().unit_vector();
+
+            // 2. El color es 50% el color de lo que sea que el rebote encuentre
+            return 0.5 * self.ray_color(&Ray::new(rec.p, direction), world, depth - 1);
+        }
+
+        // Si no choca con nada, devuelve el fondo (cielo)
+        let unit_direction = r.direction().unit_vector();
+
+        let a = 0.5 * (unit_direction.y() + 1.0);
+
+        /*
+            Usamos Lerp (linear interpolation). Cuando a = 0 quiero blanco, cuando a = 1 quiero azul
+            y cuando 0 < a < 1 quiero un color en el medio. Un lerp es de la forma:
+
+            blendedValue = (1 - a) * startValue + a * endValue.
+
+            En nuestro caso representa lo siguiente:
+
+            blendedValue = (1 - a) * blanco * a * celeste
+
+        */
+
+        (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
+    }
+
     pub fn render(&mut self, world: &dyn Hittable) {
         self.initialize();
 
@@ -148,7 +183,7 @@ impl Camera {
                 // Tomamos n samples de n rayos y vamos promediando el color
                 for _ in 0..self.samples_per_pixel {
                     let r: Ray = self.get_ray(i, j);
-                    pixel_color += self.ray_color(&r, world);
+                    pixel_color += self.ray_color(&r, world, 50);
                 }
 
                 // Calculamos el promedio de los colores obtenidos
