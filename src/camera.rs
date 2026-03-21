@@ -13,6 +13,7 @@ pub struct Camera {
     pub aspect_ratio: f64,      // 1.0 (Ej.)
     pub image_width: u32,       // 100 (Ej.)
     pub samples_per_pixel: u32, // 10  (Ej.)
+    pub max_depth: i32,         // 10  (Ej.)
     image_height: u32,
     pixel_sample_scale: f64,
     center: Point3,
@@ -22,11 +23,17 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f64, image_width: u32, samples_per_pixel: u32) -> Self {
+    pub fn new(
+        aspect_ratio: f64,
+        image_width: u32,
+        samples_per_pixel: u32,
+        max_depth: i32,
+    ) -> Camera {
         Self {
             aspect_ratio,
             image_width,
             samples_per_pixel,
+            max_depth,
             image_height: 0,
             pixel_sample_scale: 1.0 / (samples_per_pixel as f64),
             center: Point3::default(),
@@ -183,7 +190,7 @@ impl Camera {
                 // Tomamos n samples de n rayos y vamos promediando el color
                 for _ in 0..self.samples_per_pixel {
                     let r: Ray = self.get_ray(i, j);
-                    pixel_color += self.ray_color(&r, world, 50);
+                    pixel_color += self.ray_color(&r, world, self.max_depth);
                 }
 
                 // Calculamos el promedio de los colores obtenidos
