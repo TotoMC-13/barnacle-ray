@@ -3,6 +3,8 @@ use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
 };
 
+use crate::interval::Interval;
+
 #[derive(Clone, Copy, Debug)]
 pub struct Vec3 {
     pub e: [f64; 3],
@@ -191,10 +193,16 @@ pub type Color = Vec3;
 // Formateo para impresión (PPM)
 impl fmt::Display for Vec3 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let r = (255.999 * self[0]) as u8;
-        let g = (255.999 * self[1]) as u8;
-        let b = (255.999 * self[2]) as u8;
+        let r = self.x();
+        let g = self.y();
+        let b = self.z();
 
-        write!(f, "{} {} {}", r, g, b)
+        let interval: Interval = Interval::new(0.000, 0.999);
+
+        let rbyte = (256.0 * interval.clamp(r as f64)) as u8;
+        let gbyte = (256.0 * interval.clamp(g as f64)) as u8;
+        let bbyte = (256.0 * interval.clamp(b as f64)) as u8;
+
+        write!(f, "{} {} {}", rbyte, gbyte, bbyte)
     }
 }

@@ -4,14 +4,17 @@ use crate::{
     hittable::{HitRecord, Hittable},
     interval::Interval,
     ray::Ray,
+    utils::random_double,
     vec3::{Color, Point3, Vec3},
 };
 
 #[derive(Clone, Copy)]
 pub struct Camera {
-    pub aspect_ratio: f64, // 1.0
-    pub image_width: i32,  // 100
-    image_height: i32,
+    pub aspect_ratio: f64,      // 1.0 (Ej.)
+    pub image_width: u32,       // 100 (Ej.)
+    pub samples_per_pixel: u32, // 10  (Ej.)
+    image_height: u32,
+    pixel_sample_scale: f64,
     center: Point3,
     pixel00_loc: Point3,
     pixel_delta_u: Vec3,
@@ -19,11 +22,13 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f64, image_width: i32) -> Self {
+    pub fn new(aspect_ratio: f64, image_width: u32, samples_per_pixel: u32) -> Self {
         Self {
             aspect_ratio,
             image_width,
+            samples_per_pixel,
             image_height: 0,
+            pixel_sample_scale: 1.0 / (samples_per_pixel as f64),
             center: Point3::default(),
             pixel00_loc: Point3::default(),
             pixel_delta_u: Vec3::default(),
@@ -32,7 +37,7 @@ impl Camera {
     }
 
     fn initialize(&mut self) {
-        let im_height = (self.image_width as f64 / self.aspect_ratio) as i32;
+        let im_height = (self.image_width as f64 / self.aspect_ratio) as u32;
 
         self.image_height = if im_height > 1 { im_height } else { 1 };
 
@@ -133,25 +138,21 @@ impl Camera {
         // Headers para el .ppm
         println!("P3\n{} {}\n255", self.image_width, self.image_height);
 
+        // Recorremos las filas
         for j in 0..self.image_height {
             eprint!("\rLineas restantes: {} ", self.image_height - j);
+            // Recorremos las columnas
             for i in 0..self.image_width {
-                /*
-                    pixel_center se obtiene moviendonos 1 pixel desde el centro del pixel 0,0.
-                    Como ya estabamos en el centro, movernos para cualquier lado
-                    exactamente un pixel nos dejara en el centro de otro.
-                */
-                let pixel_center = self.pixel00_loc
-                    + (i as f64 * self.pixel_delta_u)
-                    + (j as f64 * self.pixel_delta_v);
+                let mut pixel_color = Color::default();
 
-                // Obtenemos el vector que va del centro de la camara al centro del pixel
-                let ray_direction = pixel_center - self.center;
-                let r: Ray = Ray::new(self.center, ray_direction);
+                // Tomamos n samples de n rayos y vamos promediando el color
+                for _ in 0..self.samples_per_pixel {
+                    let r: Ray = self.get_ray(i, j);
+                    pixel_color += self.ray_color(&r, world);
+                }
 
-                // Usamos ray_color con el rayo "r" para obtener su color
-                let pixel_color: Color = self.ray_color(&r, world);
-
+                // Calculamos el promedio de los colores obtenidos
+                pixel_color = pixel_color * self.pixel_sample_scale;
                 println!("{}", pixel_color)
             }
         }
@@ -161,5 +162,29 @@ impl Camera {
 
         eprintln!("\rListo              \n");
         eprintln!("Tiempo de renderizado: {:.2?}", duration);
+    }
+
+    pub fn get_ray(&self, i: u32, j: u32) -> Ray {
+        /*
+            Construimos un rayo desde el origen y dirigido a un lugar random alrededor de la ubicacion del pixel i, j
+            Es decir, hacemos u nrayo que apunte al pixel que queremos y le metemos el
+            offset para que variar la parte del pixel
+        */
+        let offset = self.sample_square();
+
+        let pixel_sample = self.pixel00_loc // Desde el pixel 00
+            + ((i as f64 + offset.x()) * self.pixel_delta_u) // Nos movemos a la derecha i * offset veces
+            + ((j as f64 + offset.y()) * self.pixel_delta_v); // Nos movemos para abajo j * offset veces
+
+        // Armamos un rayo desde el centro de la camara hasta la posicion que
+        let ray_origin = self.center;
+        let ray_direction = pixel_sample - ray_origin;
+
+        Ray::new(ray_origin, ray_direction)
+    }
+
+    // Devuelve un vector para aplicar el offset necesario al rayo
+    pub fn sample_square(&self) -> Vec3 {
+        Vec3::new(random_double() - 0.5, random_double() - 0.5, 0.0)
     }
 }
