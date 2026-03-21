@@ -39,8 +39,11 @@ impl Hittable for HittableList {
         let mut closest_so_far = ray_t.max;
 
         for object in &self.objects {
-            // Le pasamos 'closest_so_far' como el nuevo t_max.
-            // Si el objeto choca mas lejos que eso, el metodo 'hit' del objeto va a devolver false.
+            /*
+                Le pasamos 'closest_so_far' como el nuevo t_max. Es decir, vamos guardando
+                el objeto mas cercano al que le pegamos, eventualmente llegaremos al que esta frente a la camara
+                si el objeto choca mas lejos que eso, el metodo 'hit' del objeto va a devolver false.
+            */
             if object.hit(r, Interval::new(ray_t.min, closest_so_far), &mut temp_rec) {
                 hit_anything = true;
                 closest_so_far = temp_rec.t; // Actualizamos el record de cercania

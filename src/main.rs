@@ -1,21 +1,18 @@
-use std::{f64::INFINITY, time::Instant};
+use std::f64::INFINITY;
 
 use barnacle_ray::{
-    hittable::{HitRecord, Hittable}, hittable_list::HittableList, interval::Interval, ray::Ray, sphere::Sphere, vec3::{Color, Point3, Vec3}
+    camera::Camera,
+    hittable::{HitRecord, Hittable},
+    hittable_list::HittableList,
+    interval::Interval,
+    ray::Ray,
+    sphere::Sphere,
+    vec3::{Color, Point3, Vec3},
 };
 
 const PI: f64 = 3.1415926535897932385;
 
 fn main() {
-    // Configuracion de la imagen
-    let aspect_ratio = 16.0 / 9.0;
-    let image_width = 400;
-
-    let mut image_height = (image_width as f64 / aspect_ratio) as i32;
-    if image_height < 1 {
-        image_height = 1;
-    }
-
     // World
     let mut world: HittableList = HittableList::new();
 
@@ -23,87 +20,9 @@ fn main() {
     world.add(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0))); // El "piso"
 
     // Camara
+    let mut cam: Camera = Camera::new(16.0 / 9.0, 400);
 
-    let focal_length = 1.0;
-
-    // Configuracion del viewport
-    let viewport_height = 2.0;
-
-    // Usamos la relacion real entre ancho/alto para que no se estire la imagen
-    let viewport_width = viewport_height * (image_width as f64 / image_height as f64);
-    let camera_center = Point3::default();
-
-    /*
-        Calcular los vectores horizontales y verticales por los bordes del viewport (V_u y V_v)
-        Estos son los vectores que nos ayudaran a movernos a lo largo del viewport
-
-        V_u va para el +x
-        V_v va para el -y
-    */
-    let viewport_u = Vec3::new(viewport_width, 0.0, 0.0); // V_u
-    let viewport_v = Vec3::new(0.0, -viewport_height, 0.0); // V_v
-
-    /*
-        Calcular los deltas horizontales y verticales entre pixeles
-        Al dividir los vectores por el alto/ancho de la imagen, tenemos un nuevo vector que al sumarlo/restarlo
-        nos movera exactamente 1 pixel
-    */
-    let pixel_delta_u = viewport_u / image_width as f64;
-    let pixel_delta_v = viewport_v / image_height as f64;
-
-    /*
-        Calcular la posicion de el pixel de arriba a la izquierda
-
-        El eje +z es el que viene directo a la camara, entonces para "ir" al viewport tenemos que
-        ir hacia -z, sabiendo que la distancia del viewport a la camara es focal_length, hacemos un vector
-        cuya coordenada z sea focal_length y se lo restamos al centro de la camara. Ahora estamos parados en
-        el centro del viewport.
-
-        Ahora nos faltaria ir arriba a la izquierda para llegar al inicio del viewport (Q). Lo que hacemos es
-        Movernos la mitad de -V_u y la mitad de -V_v. Los valores son negativos porque nos queremos mover hacia
-        -x y +y siendo que V_u apunta a +x y V_v apunta a -y. Luego de todo esto, ya tenemos las coordenadas de
-        vierpower_upper_left.
-    */
-    let vierpower_upper_left =
-        camera_center - Vec3::new(0.0, 0.0, focal_length) - viewport_u / 2.0 - viewport_v / 2.0;
-
-    /*
-        pixel00_loc es la ubicacion del pixel de la fila 0, columna 0.
-
-        Simplemente nos movemos desde la esquina Q del viewport 0.5 para +x y 0.5 para -y, asi quedando
-        en el centro del pixel 0,0.
-    */
-    let pixel00_loc = vierpower_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
-
-    let start = Instant::now();
-
-    println!("P3\n{} {}\n255", image_width, image_height);
-
-    for j in 0..image_height {
-        eprint!("\rLineas restantes: {} ", image_height - j);
-        for i in 0..image_width {
-            /*
-                pixel_center se obtiene moviendonos 1 pixel desde el centro del pixel 0,0.
-                Como ya estabamos en el centro, movernos para cualquier lado exactamente un pixel nos dejara en el centro de otro.
-            */
-            let pixel_center =
-                pixel00_loc + (i as f64 * pixel_delta_u) + (j as f64 * pixel_delta_v);
-
-            // Obtenemos el vector que va del centro de la camara al centro del pixel
-            let ray_direction = pixel_center - camera_center;
-            let r: Ray = Ray::new(camera_center, ray_direction);
-
-            // Usamos ray_color con el rayo "r" para obtener su color
-            let pixel_color: Color = ray_color(&r, &world);
-
-            println!("{}", pixel_color)
-        }
-    }
-
-    let duration = start.elapsed();
-
-    eprintln!("\rListo              \n");
-    eprintln!("Tiempo de renderizado: {:.2?}", duration);
+    cam.render(&world);
 }
 
 pub fn hit_sphere(center: Point3, radius: f64, r: &Ray) -> f64 {
@@ -129,7 +48,12 @@ fn degrees_to_radians(degrees: f64) -> f64 {
 pub fn ray_color(r: &Ray, world: &dyn Hittable) -> Color {
     let mut rec = HitRecord::default(); // El formulario en blanco
 
-    // Le tiramos el rayo al mundo. t_min es 0.001 para evitar bugs de precisión, t_max es infinito.
+    /*
+        Le tiramos el rayo al mundo. t_min es 0.001 para evitar bugs de precisión, t_max es infinito.
+        el rec va del .hit del world al del objeto al que chequeamos la colision, el objeto devuelve si le pegamos
+        o no y despues procede a modificar el valor a donde apunta el puntero de rec, asi recuperando la info (record)
+        de la colision
+    */
     if world.hit(r, Interval::new(0.0, INFINITY), &mut rec) {
         // Si choco con algo, calculamos el color en base a la normal de ESE objeto ganador
         return 0.5
