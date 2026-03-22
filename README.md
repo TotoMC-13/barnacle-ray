@@ -10,3 +10,27 @@ is able to properly display the format or the option I chose, download an extens
 
 ## Why can't I see my image?
 - I had a small issue regarding the VS Code extension, the file **must** be UTF-8 encoded or the extension I use won't load it.
+
+## Some samples
+<div align="center">
+  <h2>Sampling per pixel comparative</h2>
+  
+  <table border="0">
+    <tr>
+      <td align="center">
+        <img src="images\glass_and_ball_100samples.png" alt="Render 100 samples" width="100%">
+        <br>
+        <i>100 Samples (Más ruido)</i>
+      </td>
+      <td align="center">
+        <img src="images\glass_and_ball_300samples.png" alt="Render 300 samples" width="100%">
+        <br>
+        <i>300 Samples (Más limpio)</i>
+      </td>
+    </tr>
+  </table>
+
+  <br>
+  <p><i>Demonstration of how increasing <b>samples per pixel</b> reduces noise in dielectric materials and shadows. Dielectric sphere (glass) on the left and Lambertian (matte) on the right.</i></p>
+</div>
+<br>
