@@ -13,17 +13,30 @@ is able to properly display the format or the option I chose, download an extens
 
 ## Some samples
 <div align="center">
-  <h2>Sampling per pixel comparative</h2>
+  <h3>Sampling per pixel comparative</h3>
   
   <table border="0">
+    <p>Colored glass in dark environment seems to cause lots of noise</p>
+    <tr>
+        <td align="center">
+        <img src="images/scene2_100samples.png" alt="Render 100 samples" width="100%">
+        <br>
+        <i>100 Samples (Noisier)</i>
+      </td>
+      <td align="center">
+        <img src="images/scene2_400samples.png" alt="Render 400 samples" width="100%">
+        <br>
+        <i>400 Samples (Cleaner)</i>
+      </td>
+    </tr>
     <tr>
       <td align="center">
-        <img src="images\glass_and_ball_10samples.png" alt="Render 10 samples" width="100%">
+        <img src="images/glass_and_ball_10samples.png" alt="Render 10 samples" width="100%">
         <br>
         <i>10 Samples (Noisier)</i>
       </td>
       <td align="center">
-        <img src="images\glass_and_ball_300samples.png" alt="Render 300 samples" width="100%">
+        <img src="images/glass_and_ball_300samples.png" alt="Render 300 samples" width="100%">
         <br>
         <i>300 Samples (Cleaner)</i>
       </td>
