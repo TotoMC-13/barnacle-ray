@@ -20,7 +20,7 @@ is able to properly display the format or the option I chose, download an extens
       <td align="center">
         <img src="images\glass_and_ball_10samples.png" alt="Render 10 samples" width="100%">
         <br>
-        <i>100 Samples (Noisier)</i>
+        <i>10 Samples (Noisier)</i>
       </td>
       <td align="center">
         <img src="images\glass_and_ball_300samples.png" alt="Render 300 samples" width="100%">
