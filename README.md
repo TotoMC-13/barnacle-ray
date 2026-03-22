@@ -20,12 +20,12 @@ is able to properly display the format or the option I chose, download an extens
       <td align="center">
         <img src="images\glass_and_ball_100samples.png" alt="Render 100 samples" width="100%">
         <br>
-        <i>100 Samples (Más ruido)</i>
+        <i>100 Samples (Noisier)</i>
       </td>
       <td align="center">
         <img src="images\glass_and_ball_300samples.png" alt="Render 300 samples" width="100%">
         <br>
-        <i>300 Samples (Más limpio)</i>
+        <i>300 Samples (Cleaner)</i>
       </td>
     </tr>
   </table>

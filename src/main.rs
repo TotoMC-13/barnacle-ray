@@ -38,7 +38,7 @@ fn main() {
     ))); // El "piso"
 
     // Camara
-    let mut cam: Camera = Camera::new(16.0 / 9.0, 400, 400, 50);
+    let mut cam: Camera = Camera::new(16.0 / 9.0, 1920, 10, 50);
 
     cam.render(&world);
 }
