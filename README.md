@@ -18,7 +18,7 @@ is able to properly display the format or the option I chose, download an extens
   <table border="0">
     <tr>
       <td align="center">
-        <img src="images\glass_and_ball_100samples.png" alt="Render 100 samples" width="100%">
+        <img src="images\glass_and_ball_10samples.png" alt="Render 10 samples" width="100%">
         <br>
         <i>100 Samples (Noisier)</i>
       </td>
