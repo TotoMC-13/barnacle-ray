@@ -140,7 +140,9 @@ impl Camera {
         (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
     }
 
-    pub fn ray_color(&self, r: &Ray, world: &dyn Hittable, depth: i32) -> Color {
+    pub fn ray_color(&self, r: &Ray, world: &dyn Hittable, depth: i32, total_rays: &mut u64) -> Color {
+        *total_rays += 1;
+        
         if depth <= 0 {
             return Color::default();
         }
@@ -159,7 +161,7 @@ impl Camera {
                 if mat.scatter(r, &rec, &mut attenuation, &mut scattered) {
                     // 3. Color = Atenuación * Color del siguiente rebote
                     return emited_color
-                        + attenuation * self.ray_color(&scattered, world, depth - 1);
+                        + attenuation * self.ray_color(&scattered, world, depth - 1, total_rays);
                 }
 
                 return emited_color;
@@ -201,17 +203,17 @@ impl Camera {
 
         // Iniciar timer para ver cuanto tarda
         let start = Instant::now();
-        let total_primary_rays = self.image_width * self.image_height * self.samples_per_pixel;
+        let total_primary_rays = self.image_width as u64 * self.image_height as u64 * self.samples_per_pixel as u64;
+        let mut total_rays: u64 = 0;
 
         // Headers para el .ppm
         println!("P3\n{} {}\n255", self.image_width, self.image_height);
 
         // Recorremos las filas
         for j in 0..self.image_height {
-            let processed_rays = j * self.image_width * self.samples_per_pixel;
             let elapsed_secs = start.elapsed().as_secs_f64();
             let mrps = if elapsed_secs > 0.0 {
-                (processed_rays as f64 / elapsed_secs) / 1_000_000.0
+                (total_rays as f64 / elapsed_secs) / 1_000_000.0
             } else {
                 0.0
             };
@@ -229,7 +231,7 @@ impl Camera {
                 // Tomamos n samples de n rayos y vamos promediando el color
                 for _ in 0..self.samples_per_pixel {
                     let r: Ray = self.get_ray(i, j);
-                    pixel_color += self.ray_color(&r, world, self.max_depth);
+                    pixel_color += self.ray_color(&r, world, self.max_depth, &mut total_rays);
                 }
 
                 // Calculamos el promedio de los colores obtenidos
@@ -240,7 +242,8 @@ impl Camera {
 
         // Vemos cuanto tardo en renderizar
         let duration = start.elapsed();
-        let final_mrps = (total_primary_rays as f64 / duration.as_secs_f64()) / 1_000_000.0;
+        let final_mrps = (total_rays as f64 / duration.as_secs_f64()) / 1_000_000.0;
+        let total_bounces = total_rays - total_primary_rays;
 
         eprintln!("\rListo                                                    ");
         eprintln!("Tiempo de renderizado: {:.2?}", duration);
@@ -248,6 +251,8 @@ impl Camera {
             "Rayos primarios totales: {}",
             format_with_dots(total_primary_rays)
         );
+        eprintln!("Rebotes totales: {}", format_with_dots(total_bounces));
+        eprintln!("Rayos procesados totales: {}", format_with_dots(total_rays));
         eprintln!("Promedio final de MRays/s: {:.2}", final_mrps);
     }
 

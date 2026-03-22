@@ -48,7 +48,7 @@ pub fn linear_to_gamma(linear_component: f64) -> f64 {
     0.0
 }
 
-pub fn format_with_dots(n: u32) -> String {
+pub fn format_with_dots(n: u64) -> String {
     let s = n.to_string();
     let mut result = String::new();
     let chars: Vec<char> = s.chars().rev().collect();
