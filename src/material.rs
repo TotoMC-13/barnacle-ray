@@ -11,6 +11,10 @@ pub trait Material {
         attenuation: &mut Color,
         scattered: &mut Ray,
     ) -> bool;
+
+    fn emitted(&self) -> Color {
+        Color::new(0.0, 0.0, 0.0)
+    }
 }
 
 pub struct Lambertian {
@@ -31,8 +35,8 @@ impl Material for Lambertian {
         attenuation: &mut Color,
         scattered: &mut Ray,
     ) -> bool {
-        // Normal + Vector Aleatorio
-        let mut scatter_direction = rec.normal + Vec3::random().unit_vector();
+        // Normal + Vector Aleatorio en toda la esfera unitaria
+        let mut scatter_direction = rec.normal + Vec3::random_in_unit_sphere().unit_vector();
 
         // Evitamos que la direccio sea cero si el vector aleatorio es opuesto a la normal
         if scatter_direction.near_zero() {
@@ -86,11 +90,12 @@ impl Material for Metal {
 
 pub struct Dialectric {
     ior: f64,
+    albedo: Color,
 }
 
 impl Dialectric {
-    pub fn new(ior: f64) -> Dialectric {
-        Dialectric { ior }
+    pub fn new(ior: f64, albedo: Color) -> Dialectric {
+        Dialectric { ior, albedo }
     }
 
     pub fn reflectance(cosine: f64, refraction_index: f64) -> f64 {
@@ -138,9 +143,35 @@ impl Material for Dialectric {
         *scattered = Ray::new(rec.p, scatter_direction);
 
         // Le asignamos al rayo el color del vidrio
-        *attenuation = Color::new(1.0, 1.0, 1.0);
+        *attenuation = self.albedo;
 
         // Devolvemos que generamos el rayo exitosamente
         true
+    }
+}
+
+pub struct DiffuseLight {
+    emit_color: Color,
+    intensity: f64,
+}
+
+impl DiffuseLight {
+    pub fn new(emit_color: Color, intensity: f64) -> DiffuseLight {
+        DiffuseLight { emit_color, intensity }
+    }
+}
+
+impl Material for DiffuseLight {
+    fn scatter(
+        &self,
+        _r_in: &Ray,
+        _rec: &HitRecord,
+        _attenuation: &mut Color,
+        _scattered: &mut Ray,
+    ) -> bool {
+        false // Una lampara no rebota la luz, corta la recursion.
+    }
+    fn emitted(&self) -> Color {
+        self.emit_color * self.intensity // Multilplicamos la intensidad
     }
 }

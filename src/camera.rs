@@ -150,10 +150,15 @@ impl Camera {
 
             // 2. Extraemos el material del Option y llamamos a scatter
             if let Some(mat) = &rec.mat {
+                let emited_color = mat.emitted();
+
                 if mat.scatter(r, &rec, &mut attenuation, &mut scattered) {
                     // 3. Color = Atenuación * Color del siguiente rebote
-                    return attenuation * self.ray_color(&scattered, world, depth - 1);
+                    return emited_color
+                        + attenuation * self.ray_color(&scattered, world, depth - 1);
                 }
+
+                return emited_color;
             }
 
             // 4. Si el material absorbe el rayo o no hay material, devolvemos negro
@@ -161,9 +166,9 @@ impl Camera {
         }
 
         // Si no choca con nada, devuelve el fondo (cielo)
-        let unit_direction = r.direction().unit_vector();
+        // let unit_direction = r.direction().unit_vector();
 
-        let a = 0.5 * (unit_direction.y() + 1.0);
+        // let a = 0.5 * (unit_direction.y() + 1.0);
 
         /*
             Usamos Lerp (linear interpolation). Cuando a = 0 quiero blanco, cuando a = 1 quiero azul
@@ -177,7 +182,9 @@ impl Camera {
 
         */
 
-        (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
+        // (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
+
+        Color::default()
     }
 
     pub fn render(&mut self, world: &dyn Hittable) {
@@ -185,13 +192,27 @@ impl Camera {
 
         // Iniciar timer para ver cuanto tarda
         let start = Instant::now();
+        let total_primary_rays = self.image_width * self.image_height * self.samples_per_pixel;
 
         // Headers para el .ppm
         println!("P3\n{} {}\n255", self.image_width, self.image_height);
 
         // Recorremos las filas
         for j in 0..self.image_height {
-            eprint!("\rLineas restantes: {} ", self.image_height - j);
+            let processed_rays = j * self.image_width * self.samples_per_pixel;
+            let elapsed_secs = start.elapsed().as_secs_f64();
+            let mrps = if elapsed_secs > 0.0 {
+                (processed_rays as f64 / elapsed_secs) / 1_000_000.0
+            } else {
+                0.0
+            };
+
+            eprint!(
+                "\rLineas restantes: {:<4} | MRays/s: {:.2}    ",
+                self.image_height - j,
+                mrps
+            );
+
             // Recorremos las columnas
             for i in 0..self.image_width {
                 let mut pixel_color = Color::default();
@@ -210,9 +231,12 @@ impl Camera {
 
         // Vemos cuanto tardo en renderizar
         let duration = start.elapsed();
+        let final_mrps = (total_primary_rays as f64 / duration.as_secs_f64()) / 1_000_000.0;
 
-        eprintln!("\rListo              \n");
+        eprintln!("\rListo                                                    ");
         eprintln!("Tiempo de renderizado: {:.2?}", duration);
+        eprintln!("Rayos primarios totales: {}", total_primary_rays);
+        eprintln!("Promedio final de MRays/s: {:.2}", final_mrps);
     }
 
     pub fn get_ray(&self, i: u32, j: u32) -> Ray {
