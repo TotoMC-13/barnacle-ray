@@ -1,15 +1,19 @@
+use std::sync::Arc;
+
 use crate::{
     interval::Interval,
+    material::Material,
     ray::Ray,
     vec3::{Point3, Vec3},
 };
 
-#[derive(Default, Clone, Copy)]
+#[derive(Clone, Default)]
 pub struct HitRecord {
     pub p: Point3,
     pub normal: Vec3,
     pub t: f64,
     pub front_face: bool,
+    pub mat: Option<Arc<dyn Material>>,
 }
 
 pub trait Hittable {
@@ -33,5 +37,7 @@ impl HitRecord {
         } else {
             -outward_normal
         };
+
+        self.front_face = front_face;
     }
 }

@@ -1,3 +1,4 @@
+use crate::ray::Ray;
 use std::fmt;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
@@ -79,6 +80,27 @@ impl Vec3 {
             }
             // Si no, el loop sigue y "rechaza" el anterior
         }
+    }
+
+    pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
+        // v - 2 * dot(v, n) * n
+        v - 2.0 * v.dot(n) * n
+    }
+
+    pub fn near_zero(&self) -> bool {
+        // Definimos un valor muy pequeño (epsilon)
+        let s = 1e-8;
+        // Retorna true si las tres componentes están muy cerca de cero
+        (self.e[0].abs() < s) && (self.e[1].abs() < s) && (self.e[2].abs() < s)
+    }
+
+    pub fn refract(r: Vec3, n: Vec3, refraction_ratio: f64) -> Vec3 {
+        // Calculamos el componente perpendicular de r
+        let r_perp: Vec3 = refraction_ratio * (r + r.dot(n) * -1.0 * n);
+        // Calculamos el componente paralelo de r
+        let r_paralell: Vec3 = (1.0 - r_perp.length_squared()).abs().sqrt() * -n;
+
+        r_perp + r_paralell
     }
 }
 

@@ -1,6 +1,9 @@
+use std::sync::Arc;
+
 use crate::{
     hittable::{HitRecord, Hittable},
     interval::Interval,
+    material::Material,
     ray::Ray,
     vec3::{Point3, Vec3},
 };
@@ -8,11 +11,16 @@ use crate::{
 pub struct Sphere {
     center: Point3,
     radius: f64,
+    mat: Arc<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f64) -> Self {
-        Self { center, radius }
+    pub fn new(center: Point3, radius: f64, mat: Arc<dyn Material>) -> Self {
+        Self {
+            center,
+            radius,
+            mat,
+        }
     }
 }
 
@@ -57,6 +65,8 @@ impl Hittable for Sphere {
         // Ve si el rayo viene de afuera o adentro. Despues guarda si el rayo viene de afuera
         // y la normal que usara para calcular luces y colores.
         rec.set_face_normal(r, outward_normal);
+
+        rec.mat = Some(self.mat.clone());
 
         true
     }

@@ -142,13 +142,22 @@ impl Camera {
         }
 
         let mut rec = HitRecord::default();
-        // Usamos 0.001 para ignorar choques muy cercanos
-        if world.hit(r, Interval::new(0.001, INFINITY), &mut rec) {
-            // 1. Generamos la direccion aleatoria
-            let direction = rec.normal + Vec3::random_in_unit_sphere().unit_vector();
 
-            // 2. El color es 50% el color de lo que sea que el rebote encuentre
-            return 0.5 * self.ray_color(&Ray::new(rec.p, direction), world, depth - 1);
+        // 1. Intentamos el choque con el mundo
+        if world.hit(r, Interval::new(0.001, f64::INFINITY), &mut rec) {
+            let mut scattered = Ray::default();
+            let mut attenuation = Color::default();
+
+            // 2. Extraemos el material del Option y llamamos a scatter
+            if let Some(mat) = &rec.mat {
+                if mat.scatter(r, &rec, &mut attenuation, &mut scattered) {
+                    // 3. Color = Atenuación * Color del siguiente rebote
+                    return attenuation * self.ray_color(&scattered, world, depth - 1);
+                }
+            }
+
+            // 4. Si el material absorbe el rayo o no hay material, devolvemos negro
+            return Color::new(0.0, 0.0, 0.0);
         }
 
         // Si no choca con nada, devuelve el fondo (cielo)
