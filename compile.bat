@@ -1,3 +1,4 @@
 @echo off
 echo Renderizando BarnacleRay...
 cargo run --release > imagen.ppm
+pause

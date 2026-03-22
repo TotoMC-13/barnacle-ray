@@ -47,3 +47,17 @@ pub fn linear_to_gamma(linear_component: f64) -> f64 {
 
     0.0
 }
+
+pub fn format_with_dots(n: u32) -> String {
+    let s = n.to_string();
+    let mut result = String::new();
+    let chars: Vec<char> = s.chars().rev().collect();
+
+    for (i, c) in chars.iter().enumerate() {
+        if i > 0 && i % 3 == 0 {
+            result.push('.');
+        }
+        result.push(*c);
+    }
+    result.chars().rev().collect()
+}

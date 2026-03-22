@@ -4,6 +4,7 @@ use crate::{
     hittable::{HitRecord, Hittable},
     interval::Interval,
     ray::Ray,
+    utils::format_with_dots,
     utils::random_double,
     vec3::{Color, Point3, Vec3},
 };
@@ -14,6 +15,7 @@ pub struct Camera {
     pub image_width: u32,       // 100 (Ej.)
     pub samples_per_pixel: u32, // 10  (Ej.)
     pub max_depth: i32,         // 10  (Ej.)
+    pub sky_emits_light: bool,
     image_height: u32,
     pixel_sample_scale: f64,
     center: Point3,
@@ -28,12 +30,14 @@ impl Camera {
         image_width: u32,
         samples_per_pixel: u32,
         max_depth: i32,
+        sky_emits_light: bool,
     ) -> Camera {
         Self {
             aspect_ratio,
             image_width,
             samples_per_pixel,
             max_depth,
+            sky_emits_light,
             image_height: 0,
             pixel_sample_scale: 1.0 / (samples_per_pixel as f64),
             center: Point3::default(),
@@ -165,26 +169,31 @@ impl Camera {
             return Color::new(0.0, 0.0, 0.0);
         }
 
-        // Si no choca con nada, devuelve el fondo (cielo)
-        // let unit_direction = r.direction().unit_vector();
+        if self.sky_emits_light {
+            // Si no choca con nada, devuelve el fondo (cielo)
+            let unit_direction = r.direction().unit_vector();
 
-        // let a = 0.5 * (unit_direction.y() + 1.0);
+            /*
+                Ahora como y esta entre -1 y 1, vamos a pasarlo al rango de
+                entre 0 y 1 para luego calcular facilmente el color
+            */
+            let a = 0.5 * (unit_direction.y() + 1.0);
 
-        /*
-            Usamos Lerp (linear interpolation). Cuando a = 0 quiero blanco, cuando a = 1 quiero azul
-            y cuando 0 < a < 1 quiero un color en el medio. Un lerp es de la forma:
+            /*
+                Usamos Lerp (linear interpolation). Cuando a = 0 quiero blanco, cuando a = 1 quiero azul
+                y cuando 0 < a < 1 quiero un color en el medio. Un lerp es de la forma:
 
-            blendedValue = (1 - a) * startValue + a * endValue.
+                blendedValue = (1 - a) * startValue + a * endValue.
 
-            En nuestro caso representa lo siguiente:
+                En nuestro caso representa lo siguiente:
 
-            blendedValue = (1 - a) * blanco * a * celeste
+                blendedValue = (1 - a) * blanco * a * celeste
 
-        */
-
-        // (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
-
-        Color::default()
+            */
+            (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
+        } else {
+            Color::default()
+        }
     }
 
     pub fn render(&mut self, world: &dyn Hittable) {
@@ -235,7 +244,10 @@ impl Camera {
 
         eprintln!("\rListo                                                    ");
         eprintln!("Tiempo de renderizado: {:.2?}", duration);
-        eprintln!("Rayos primarios totales: {}", total_primary_rays);
+        eprintln!(
+            "Rayos primarios totales: {}",
+            format_with_dots(total_primary_rays)
+        );
         eprintln!("Promedio final de MRays/s: {:.2}", final_mrps);
     }
 
