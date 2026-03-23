@@ -103,7 +103,13 @@ impl Camera {
         self.pixel00_loc = vierpower_upper_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
     }
 
-    fn _old_ray_color(&self, r: &Ray, world: &dyn Hittable) -> Color {
+    fn _old_ray_color(
+        &self,
+        r: &Ray,
+        world: &dyn Hittable,
+        _depth: i32,
+        _total_rays: &mut u64,
+    ) -> Color {
         let mut rec: HitRecord = HitRecord::default();
 
         /*
@@ -140,9 +146,15 @@ impl Camera {
         (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
     }
 
-    pub fn ray_color(&self, r: &Ray, world: &dyn Hittable, depth: i32, total_rays: &mut u64) -> Color {
+    pub fn ray_color(
+        &self,
+        r: &Ray,
+        world: &dyn Hittable,
+        depth: i32,
+        total_rays: &mut u64,
+    ) -> Color {
         *total_rays += 1;
-        
+
         if depth <= 0 {
             return Color::default();
         }
@@ -203,7 +215,8 @@ impl Camera {
 
         // Iniciar timer para ver cuanto tarda
         let start = Instant::now();
-        let total_primary_rays = self.image_width as u64 * self.image_height as u64 * self.samples_per_pixel as u64;
+        let total_primary_rays =
+            self.image_width as u64 * self.image_height as u64 * self.samples_per_pixel as u64;
         let mut total_rays: u64 = 0;
 
         // Headers para el .ppm
