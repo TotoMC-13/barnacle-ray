@@ -4,8 +4,7 @@ use crate::{
     hittable::{HitRecord, Hittable},
     interval::Interval,
     ray::Ray,
-    utils::format_with_dots,
-    utils::random_double,
+    utils::{degrees_to_radians, format_with_dots, random_double},
     vec3::{Color, Point3, Vec3},
 };
 
@@ -16,6 +15,7 @@ pub struct Camera {
     pub samples_per_pixel: u32, // 10  (Ej.)
     pub max_depth: i32,         // 10  (Ej.)
     pub sky_emits_light: bool,
+    pub vfov: f64, // 90.0 (Ej.)
     image_height: u32,
     pixel_sample_scale: f64,
     center: Point3,
@@ -31,6 +31,7 @@ impl Camera {
         samples_per_pixel: u32,
         max_depth: i32,
         sky_emits_light: bool,
+        vfov: f64,
     ) -> Camera {
         Self {
             aspect_ratio,
@@ -38,6 +39,7 @@ impl Camera {
             samples_per_pixel,
             max_depth,
             sky_emits_light,
+            vfov,
             image_height: 0,
             pixel_sample_scale: 1.0 / (samples_per_pixel as f64),
             center: Point3::default(),
@@ -57,7 +59,9 @@ impl Camera {
         // Dimensiones viewport
 
         let focal_length = 1.0;
-        let viewport_height = 2.0;
+        let theta = degrees_to_radians(self.vfov);
+        let h: f64 = (theta / 2.0).tan();
+        let viewport_height = 2.0 * h * focal_length;
         let viewport_width = viewport_height * (self.image_width as f64 / self.image_height as f64);
 
         /*
