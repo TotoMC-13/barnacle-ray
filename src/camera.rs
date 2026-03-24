@@ -19,6 +19,8 @@ pub struct Camera {
     pub lookfrom: Point3,
     pub lookat: Point3,
     pub vup: Vec3,
+    pub defocus_angle: f64,
+    pub focus_dist: f64,
     image_height: u32,
     pixel_sample_scale: f64,
     center: Point3,
@@ -28,6 +30,8 @@ pub struct Camera {
     u: Vec3,
     v: Vec3,
     w: Vec3,
+    defocus_disk_u: Vec3,
+    defocus_disk_v: Vec3,
 }
 
 impl Camera {
@@ -50,10 +54,9 @@ impl Camera {
         self.v = self.w.cross(self.u);
 
         // Dimensiones viewport
-        let focal_length = (self.lookfrom - self.lookat).length();
         let theta = degrees_to_radians(self.vfov);
         let h: f64 = (theta / 2.0).tan();
-        let viewport_height = 2.0 * h * focal_length;
+        let viewport_height = 2.0 * h * self.focus_dist;
         let viewport_width = viewport_height * (self.image_width as f64 / self.image_height as f64);
 
         /*
@@ -85,10 +88,15 @@ impl Camera {
             Ahora nos faltaria ir arriba a la izquierda para llegar al inicio del viewport (Q). Lo que hacemos es
             Movernos la mitad de -V_u y la mitad de -V_v. Los valores son negativos porque nos queremos mover hacia
             -x y +y siendo que V_u apunta a +x y V_v apunta a -y. Luego de todo esto, ya tenemos las coordenadas de
-            vierpower_upper_left.
+            viewport_upper_left.
         */
-        let vierpower_upper_left =
-            self.center - (focal_length * self.w) - viewport_u / 2.0 - viewport_v / 2.0;
+        let viewport_upper_left =
+            self.center - (self.focus_dist * self.w) - viewport_u / 2.0 - viewport_v / 2.0;
+
+        // Calculamos los vectores base del disco de desenfoque
+        let defocus_radius: f64 = self.focus_dist * degrees_to_radians(self.defocus_angle / 2.0);
+        self.defocus_disk_u = self.u * defocus_radius;
+        self.defocus_disk_v = self.v * defocus_radius;
 
         /*
             pixel00_loc es la ubicacion del pixel de la fila 0, columna 0.
@@ -96,7 +104,7 @@ impl Camera {
             Simplemente nos movemos desde la esquina Q del viewport 0.5 para +x y 0.5 para -y, asi quedando
             en el centro del pixel 0,0.
         */
-        self.pixel00_loc = vierpower_upper_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
+        self.pixel00_loc = viewport_upper_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
     }
 
     fn _old_ray_color(
@@ -267,9 +275,10 @@ impl Camera {
 
     pub fn get_ray(&self, i: u32, j: u32) -> Ray {
         /*
-            Construimos un rayo desde el origen y dirigido a un lugar random alrededor de la ubicacion del pixel i, j
-            Es decir, hacemos u nrayo que apunte al pixel que queremos y le metemos el
-            offset para que variar la parte del pixel
+            Construimos un rayo originado en el radio de desenfoque y dirigido a un lugar
+            random alrededor de la ubicacion del pixel i, j
+            Es decir, hacemos un rayo que apunte al pixel que queremos y le metemos el
+            offset para que varie la parte del pixel al que llega
         */
         let offset = self.sample_square();
 
@@ -278,7 +287,11 @@ impl Camera {
             + ((j as f64 + offset.y()) * self.pixel_delta_v); // Nos movemos para abajo j * offset veces
 
         // Armamos un rayo desde el centro de la camara hasta la posicion que
-        let ray_origin = self.center;
+        let ray_origin = if self.defocus_angle <= 0.0 {
+            self.center
+        } else {
+            self.defocus_disk_sample()
+        };
         let ray_direction = pixel_sample - ray_origin;
 
         Ray::new(ray_origin, ray_direction)
@@ -287,6 +300,11 @@ impl Camera {
     // Devuelve un vector para aplicar el offset necesario al rayo
     pub fn sample_square(&self) -> Vec3 {
         Vec3::new(random_double() - 0.5, random_double() - 0.5, 0.0)
+    }
+
+    pub fn defocus_disk_sample(&self) -> Point3 {
+        let p = Vec3::random_in_unit_disk();
+        self.center + (p.x() * self.defocus_disk_u) + (p.y() * self.defocus_disk_v)
     }
 }
 
@@ -302,6 +320,8 @@ impl Default for Camera {
             lookfrom: Point3::new(0.0, 0.0, -1.0),
             lookat: Point3::new(0.0, 0.0, 0.0),
             vup: Vec3::new(0.0, 1.0, 0.0),
+            defocus_angle: 0.0,
+            focus_dist: 0.0,
             // Variables internas de la camara (se calculan en initialize)
             image_height: 0,
             pixel_sample_scale: 0.0,
@@ -312,6 +332,8 @@ impl Default for Camera {
             u: Vec3::default(),
             v: Vec3::default(),
             w: Vec3::default(),
+            defocus_disk_u: Vec3::default(),
+            defocus_disk_v: Vec3::default(),
         }
     }
 }

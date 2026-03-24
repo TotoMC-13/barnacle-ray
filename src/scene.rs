@@ -115,13 +115,14 @@ impl Scene {
     pub fn random_spheres() -> Self {
         let mut world = HittableList::new();
 
-        // Suelo gigante
         let ground_material = Arc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
         world.add(Box::new(Sphere::new(
             Point3::new(0.0, -1000.0, 0.0),
             1000.0,
             ground_material,
         )));
+
+        let mut centros_aprobados: Vec<Point3> = Vec::new();
 
         for a in -11..11 {
             for b in -11..11 {
@@ -132,24 +133,36 @@ impl Scene {
                     b as f64 + 0.9 * random_double(),
                 );
 
-                if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
-                    if choose_mat < 0.8 {
-                        // Difuso
-                        let albedo = Color::random() * Color::random();
-                        let sphere_material = Arc::new(Lambertian::new(albedo));
-                        world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
-                    } else if choose_mat < 0.95 {
-                        // Metal
-                        let albedo = Color::random_range(0.5, 1.0);
-                        let fuzz = random_double_range(0.0, 0.5);
-                        let sphere_material = Arc::new(Metal::new(albedo, fuzz));
-                        world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
-                    } else {
-                        // Vidrio
-                        let sphere_material =
-                            Arc::new(Dielectric::new(1.5, Color::new(1.0, 1.0, 1.0)));
-                        world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
+                if (center - Point3::new(4.0, 0.2, 0.0)).length() <= 0.9 {
+                    continue;
+                }
+
+                let mut colisiona = false;
+                for centro_previo in &centros_aprobados {
+                    if (center - *centro_previo).length() < 0.4 {
+                        colisiona = true;
+                        break;
                     }
+                }
+
+                if colisiona {
+                    continue;
+                }
+
+                centros_aprobados.push(center);
+
+                if choose_mat < 0.8 {
+                    let albedo = Color::random() * Color::random();
+                    let sphere_material = Arc::new(Lambertian::new(albedo));
+                    world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
+                } else if choose_mat < 0.95 {
+                    let albedo = Color::random_range(0.5, 1.0);
+                    let fuzz = random_double_range(0.0, 0.5);
+                    let sphere_material = Arc::new(Metal::new(albedo, fuzz));
+                    world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
+                } else {
+                    let sphere_material = Arc::new(Dielectric::new(1.5, Color::new(1.0, 1.0, 1.0)));
+                    world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
                 }
             }
         }
@@ -172,7 +185,7 @@ impl Scene {
         cam.image_width = 1920;
         cam.samples_per_pixel = 400;
         cam.max_depth = 50;
-        cam.vfov = 20.0; // Zoom in
+        cam.vfov = 20.0;
         cam.lookfrom = Point3::new(13.0, 2.0, 3.0);
         cam.lookat = Point3::new(0.0, 0.0, 0.0);
         cam.vup = Vec3::new(0.0, 1.0, 0.0);
@@ -181,8 +194,8 @@ impl Scene {
         Self::new(cam, world)
     }
 
-    // ESCENA 4: Escena con iluminacion custom y burbuja de vidrio 
-pub fn custom_light_scene() -> Self {
+    // ESCENA 4: Escena con iluminacion custom y burbuja de vidrio
+    pub fn custom_light_scene() -> Self {
         let mut world = HittableList::new();
 
         let material_suelo = Arc::new(Lambertian::new(Color::new(0.49, 0.99, 0.00)));
@@ -191,12 +204,36 @@ pub fn custom_light_scene() -> Self {
         let luz_naranja = Arc::new(DiffuseLight::new(Color::new(1.0, 0.6, 0.2), 50.0));
         let luz_azul = Arc::new(DiffuseLight::new(Color::new(0.3, 0.5, 1.0), 30.0));
 
-        world.add(Box::new(Sphere::new(Point3::new(1.25, 0.0, -1.5), 0.5, material_pelota)));
-        world.add(Box::new(Sphere::new(Point3::new(0.0, 2.5, -1.5), 0.5, luz_naranja)));
-        world.add(Box::new(Sphere::new(Point3::new(3.0, 1.0, -1.0), 0.3, luz_azul)));
-        world.add(Box::new(Sphere::new(Point3::new(-1.25, 0.0, -1.5), 0.5, material_vidrio.clone())));
-        world.add(Box::new(Sphere::new(Point3::new(-1.25, 0.0, -1.5), -0.45, material_vidrio.clone())));
-        world.add(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, material_suelo)));
+        world.add(Box::new(Sphere::new(
+            Point3::new(1.25, 0.0, -1.5),
+            0.5,
+            material_pelota,
+        )));
+        world.add(Box::new(Sphere::new(
+            Point3::new(0.0, 2.5, -1.5),
+            0.5,
+            luz_naranja,
+        )));
+        world.add(Box::new(Sphere::new(
+            Point3::new(3.0, 1.0, -1.0),
+            0.3,
+            luz_azul,
+        )));
+        world.add(Box::new(Sphere::new(
+            Point3::new(-1.25, 0.0, -1.5),
+            0.5,
+            material_vidrio.clone(),
+        )));
+        world.add(Box::new(Sphere::new(
+            Point3::new(-1.25, 0.0, -1.5),
+            -0.45,
+            material_vidrio.clone(),
+        )));
+        world.add(Box::new(Sphere::new(
+            Point3::new(0.0, -100.5, -1.0),
+            100.0,
+            material_suelo,
+        )));
 
         let mut cam = Camera::default();
         cam.aspect_ratio = 16.0 / 9.0;
