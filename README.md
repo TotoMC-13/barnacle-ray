@@ -1,5 +1,7 @@
 # Implementing a ray-tracing engine with Rust from scratch with the help of [Ray Tracing in One Weekend](https://raytracing.github.io/books/RayTracingInOneWeekend.html)
 
+- **DISCLAIMER:** I did use ONE cargo and it was rayon, planning on removing it in the future and do it manually
+
 ## How to use:
 - Open your command terminal and run `git clone https://github.com/TotoMC-13/barnacle-ray.git`
 - `cd barnacle-ray` **important notice:** The run file only works for Windows as it's a `.bat` file, it's not hard to create one for Linux or whatever you use but at this point of the project I'm too lazy to do it, feel free to make a PR if you make one and I'll gladly merge it.
@@ -13,6 +15,11 @@ is able to properly display the format or the option I chose, download an extens
 
 ## Some samples
 <div align="center">
+  <h3>Final Render</h3>
+  <img src="images/finalrender_400samples.png" alt="Final Render 400 samples" width="100%">
+  <br>
+  <br>
+
   <h3>Sampling per pixel comparative</h3>
   
   <table border="0">
@@ -46,4 +53,6 @@ is able to properly display the format or the option I chose, download an extens
   <br>
   <p><i>Demonstration of how increasing <b>samples per pixel</b> reduces noise in dielectric materials and shadows. Dielectric sphere (glass) on the left and Lambertian (matte) on the right.</i></p>
 </div>
+
+
 <br>
