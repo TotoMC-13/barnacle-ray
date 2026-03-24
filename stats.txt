@@ -1,5 +1,0 @@
-Tiempo de renderizado: 3.47s
-Rayos primarios totales: 4.500.000
-Rebotes totales: 6.157.632
-Rayos procesados totales: 10.657.632
-Promedio final de MRays/s: 3.07
