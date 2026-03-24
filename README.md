@@ -23,7 +23,6 @@ is able to properly display the format or the option I chose, download an extens
   <h3>Sampling per pixel comparative</h3>
   
   <table border="0">
-    <p>Colored glass in dark environment seems to cause lots of noise</p>
     <tr>
         <td align="center">
         <img src="images/scene2_100samples.png" alt="Render 100 samples" width="100%">
