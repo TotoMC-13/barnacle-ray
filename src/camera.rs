@@ -16,37 +16,23 @@ pub struct Camera {
     pub max_depth: i32,         // 10  (Ej.)
     pub sky_emits_light: bool,
     pub vfov: f64, // 90.0 (Ej.)
+    pub lookfrom: Point3,
+    pub lookat: Point3,
+    pub vup: Vec3,
     image_height: u32,
     pixel_sample_scale: f64,
     center: Point3,
     pixel00_loc: Point3,
     pixel_delta_u: Vec3,
     pixel_delta_v: Vec3,
+    u: Vec3,
+    v: Vec3,
+    w: Vec3,
 }
 
 impl Camera {
-    pub fn new(
-        aspect_ratio: f64,
-        image_width: u32,
-        samples_per_pixel: u32,
-        max_depth: i32,
-        sky_emits_light: bool,
-        vfov: f64,
-    ) -> Camera {
-        Self {
-            aspect_ratio,
-            image_width,
-            samples_per_pixel,
-            max_depth,
-            sky_emits_light,
-            vfov,
-            image_height: 0,
-            pixel_sample_scale: 1.0 / (samples_per_pixel as f64),
-            center: Point3::default(),
-            pixel00_loc: Point3::default(),
-            pixel_delta_u: Vec3::default(),
-            pixel_delta_v: Vec3::default(),
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 
     fn initialize(&mut self) {
@@ -54,11 +40,17 @@ impl Camera {
 
         self.image_height = if im_height > 1 { im_height } else { 1 };
 
-        self.center = Point3::default();
+        self.center = self.lookfrom;
+
+        self.pixel_sample_scale = 1.0 / (self.samples_per_pixel as f64);
+
+        // Sistema de coordenadas local a la camara
+        self.w = (self.lookfrom - self.lookat).unit_vector();
+        self.u = self.vup.cross(self.w).unit_vector();
+        self.v = self.w.cross(self.u);
 
         // Dimensiones viewport
-
-        let focal_length = 1.0;
+        let focal_length = (self.lookfrom - self.lookat).length();
         let theta = degrees_to_radians(self.vfov);
         let h: f64 = (theta / 2.0).tan();
         let viewport_height = 2.0 * h * focal_length;
@@ -71,8 +63,8 @@ impl Camera {
             V_u va para el +x
             V_v va para el -y
         */
-        let viewport_u = Vec3::new(viewport_width, 0.0, 0.0); // V_u
-        let viewport_v = Vec3::new(0.0, -viewport_height, 0.0); // V_v
+        let viewport_u = viewport_width * self.u; // V_u
+        let viewport_v = viewport_height * (-self.v); // V_v
 
         /*
             Calcular los deltas horizontales y verticales entre pixeles
@@ -96,7 +88,7 @@ impl Camera {
             vierpower_upper_left.
         */
         let vierpower_upper_left =
-            self.center - Vec3::new(0.0, 0.0, focal_length) - viewport_u / 2.0 - viewport_v / 2.0;
+            self.center - (focal_length * self.w) - viewport_u / 2.0 - viewport_v / 2.0;
 
         /*
             pixel00_loc es la ubicacion del pixel de la fila 0, columna 0.
@@ -295,5 +287,31 @@ impl Camera {
     // Devuelve un vector para aplicar el offset necesario al rayo
     pub fn sample_square(&self) -> Vec3 {
         Vec3::new(random_double() - 0.5, random_double() - 0.5, 0.0)
+    }
+}
+
+impl Default for Camera {
+    fn default() -> Self {
+        Self {
+            aspect_ratio: 1.0,
+            image_width: 100,
+            samples_per_pixel: 10,
+            max_depth: 10,
+            sky_emits_light: true,
+            vfov: 90.0,
+            lookfrom: Point3::new(0.0, 0.0, -1.0),
+            lookat: Point3::new(0.0, 0.0, 0.0),
+            vup: Vec3::new(0.0, 1.0, 0.0),
+            // Variables internas de la camara (se calculan en initialize)
+            image_height: 0,
+            pixel_sample_scale: 0.0,
+            center: Point3::default(),
+            pixel00_loc: Point3::default(),
+            pixel_delta_u: Vec3::default(),
+            pixel_delta_v: Vec3::default(),
+            u: Vec3::default(),
+            v: Vec3::default(),
+            w: Vec3::default(),
+        }
     }
 }

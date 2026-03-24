@@ -88,14 +88,14 @@ impl Material for Metal {
     }
 }
 
-pub struct Dialectric {
+pub struct Dielectric {
     ior: f64,
     albedo: Color,
 }
 
-impl Dialectric {
-    pub fn new(ior: f64, albedo: Color) -> Dialectric {
-        Dialectric { ior, albedo }
+impl Dielectric {
+    pub fn new(ior: f64, albedo: Color) -> Dielectric {
+        Dielectric { ior, albedo }
     }
 
     pub fn reflectance(cosine: f64, refraction_index: f64) -> f64 {
@@ -106,7 +106,7 @@ impl Dialectric {
     }
 }
 
-impl Material for Dialectric {
+impl Material for Dielectric {
     fn scatter(
         &self,
         r_in: &Ray,
@@ -131,7 +131,7 @@ impl Material for Dialectric {
         let scatter_direction: Vec3;
         let cannot_refract: bool = (refraction_ratio * sin_theta) > 1.0;
 
-        if cannot_refract || Dialectric::reflectance(cos_theta, refraction_ratio) > random_double()
+        if cannot_refract || Dielectric::reflectance(cos_theta, refraction_ratio) > random_double()
         {
             scatter_direction = Vec3::reflect(ray_direction, rec.normal);
         } else {
@@ -157,7 +157,10 @@ pub struct DiffuseLight {
 
 impl DiffuseLight {
     pub fn new(emit_color: Color, intensity: f64) -> DiffuseLight {
-        DiffuseLight { emit_color, intensity }
+        DiffuseLight {
+            emit_color,
+            intensity,
+        }
     }
 }
 
