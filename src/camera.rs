@@ -1,4 +1,6 @@
 use rayon::prelude::*;
+use std::fs::File;
+use std::io::Write;
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use std::{f64::INFINITY, time::Instant};
 
@@ -286,15 +288,27 @@ impl Camera {
         let final_mrps = (total_rays as f64 / duration.as_secs_f64()) / 1_000_000.0;
         let total_bounces = total_rays - total_primary_rays;
 
-        eprintln!("\rListo                                                    ");
-        eprintln!("Tiempo de renderizado: {:.2?}", duration);
-        eprintln!(
-            "Rayos primarios totales: {}",
-            format_with_dots(total_primary_rays)
+        let stats_output = format!(
+            "Tiempo de renderizado: {:.2?}\n\
+         Rayos primarios totales: {}\n\
+         Rebotes totales: {}\n\
+         Rayos procesados totales: {}\n\
+         Promedio final de MRays/s: {:.2}",
+            duration,
+            format_with_dots(total_primary_rays),
+            format_with_dots(total_bounces),
+            format_with_dots(total_rays),
+            final_mrps
         );
-        eprintln!("Rebotes totales: {}", format_with_dots(total_bounces));
-        eprintln!("Rayos procesados totales: {}", format_with_dots(total_rays));
-        eprintln!("Promedio final de MRays/s: {:.2}", final_mrps);
+
+        // Imprimir a consola (stderr)
+        eprintln!("\rListo                                         ");
+        eprintln!("{}", stats_output);
+
+        // Guardar en stats.txt
+        if let Ok(mut file) = File::create("stats.txt") {
+            let _ = file.write_all(stats_output.as_bytes());
+        }
     }
 
     pub fn get_ray(&self, i: u32, j: u32) -> Ray {
