@@ -16,7 +16,7 @@ pub struct HitRecord {
     pub mat: Option<Arc<dyn Material>>,
 }
 
-pub trait Hittable {
+pub trait Hittable: Send + Sync {
     fn hit(&self, r: &Ray, ray_t: Interval, rec: &mut HitRecord) -> bool;
 }
 

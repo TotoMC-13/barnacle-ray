@@ -1,3 +1,5 @@
+use rayon::prelude::*;
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use std::{f64::INFINITY, time::Instant};
 
 use crate::{
@@ -217,47 +219,69 @@ impl Camera {
     pub fn render(&mut self, world: &dyn Hittable) {
         self.initialize();
 
-        // Iniciar timer para ver cuanto tarda
         let start = Instant::now();
         let total_primary_rays =
             self.image_width as u64 * self.image_height as u64 * self.samples_per_pixel as u64;
-        let mut total_rays: u64 = 0;
 
-        // Headers para el .ppm
+        // Contadores atomicos compartidos entre todos los hilos
+        let lines_remaining = AtomicU32::new(self.image_height);
+        let total_rays_atomic = AtomicU64::new(0);
+
         println!("P3\n{} {}\n255", self.image_width, self.image_height);
 
-        // Recorremos las filas
-        for j in 0..self.image_height {
-            let elapsed_secs = start.elapsed().as_secs_f64();
-            let mrps = if elapsed_secs > 0.0 {
-                (total_rays as f64 / elapsed_secs) / 1_000_000.0
-            } else {
-                0.0
-            };
+        // Creamos un vector con los numeros de fila (0, 1, 2... image_height - 1)
+        let rows: Vec<u32> = (0..self.image_height).collect();
 
-            eprint!(
-                "\rLineas restantes: {:<4} | MRays/s: {:.2}    ",
-                self.image_height - j,
-                mrps
-            );
+        // Procesamos FILA por FILA en paralelo
+        let buffer_colores: Vec<Color> = rows
+            .into_par_iter()
+            .flat_map(|j| {
+                let mut row_colors = Vec::with_capacity(self.image_width as usize);
+                let mut local_row_rays = 0; // Contador exclusivo de este hilo/fila
 
-            // Recorremos las columnas
-            for i in 0..self.image_width {
-                let mut pixel_color = Color::default();
-
-                // Tomamos n samples de n rayos y vamos promediando el color
-                for _ in 0..self.samples_per_pixel {
-                    let r: Ray = self.get_ray(i, j);
-                    pixel_color += self.ray_color(&r, world, self.max_depth, &mut total_rays);
+                for i in 0..self.image_width {
+                    let mut pixel_color = Color::default();
+                    for _ in 0..self.samples_per_pixel {
+                        let r: Ray = self.get_ray(i, j);
+                        // Le pasamos nuestro contador local a la función existente
+                        pixel_color +=
+                            self.ray_color(&r, world, self.max_depth, &mut local_row_rays);
+                    }
+                    row_colors.push(pixel_color * self.pixel_sample_scale);
                 }
 
-                // Calculamos el promedio de los colores obtenidos
-                pixel_color = pixel_color * self.pixel_sample_scale;
-                println!("{}", pixel_color)
-            }
+                // Al terminar la fila, volcamos los rayos locales al total atómico global de forma segura
+                let current_total_rays =
+                    total_rays_atomic.fetch_add(local_row_rays, Ordering::Relaxed) + local_row_rays;
+                let remaining = lines_remaining.fetch_sub(1, Ordering::Relaxed) - 1;
+
+                // Actualizamos la consola en tiempo real
+                let elapsed_secs = start.elapsed().as_secs_f64();
+                let mrps = if elapsed_secs > 0.0 {
+                    (current_total_rays as f64 / elapsed_secs) / 1_000_000.0
+                } else {
+                    0.0
+                };
+
+                eprint!(
+                    "\rLineas restantes: {:<4} | MRays/s: {:.2} | Elapsed: {:.2?}    ",
+                    remaining,
+                    mrps,
+                    start.elapsed()
+                );
+
+                // Devolvemos el array de colores de esta fila
+                row_colors
+            })
+            .collect();
+
+        // Imprimimos el resultado final secuencialmente para que el PPM no se rompa
+        for color in buffer_colores {
+            println!("{}", color);
         }
 
-        // Vemos cuanto tardo en renderizar
+        // Recuperamos el total exacto final y calculamos stats
+        let total_rays = total_rays_atomic.load(Ordering::Relaxed);
         let duration = start.elapsed();
         let final_mrps = (total_rays as f64 / duration.as_secs_f64()) / 1_000_000.0;
         let total_bounces = total_rays - total_primary_rays;
