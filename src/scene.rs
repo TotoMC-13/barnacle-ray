@@ -23,7 +23,7 @@ impl Scene {
         self.cam.render(&self.world);
     }
 
-    // ESCENA 1: Tu escena base
+    // ESCENA 1: Escena base
     pub fn basic_spheres() -> Self {
         let mut world = HittableList::new();
 
