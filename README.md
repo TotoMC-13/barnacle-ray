@@ -1,6 +1,6 @@
 # Implementing a ray-tracing engine with Rust from scratch with the help of [Ray Tracing in One Weekend](https://raytracing.github.io/books/RayTracingInOneWeekend.html)
 
-- **DISCLAIMER:** I did use ONE cargo and it was rayon, planning on removing it in the future and do it manually
+- **DISCLAIMER:** I did use ONE crate and it was rayon, planning on removing it in the future and do it manually
 
 ## How to use:
 - Open your command terminal and run `git clone https://github.com/TotoMC-13/barnacle-ray.git`
